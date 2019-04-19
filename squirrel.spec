@@ -1,18 +1,23 @@
 #
 # Conditional build:
-%bcond_without	static_libs	# don't build static libraries
+%bcond_without	static_libs	# static libraries
 #
 Summary:	High level imperative/OO programming language
+Summary(pl.UTF-8):	Wysokopoziomowy imperatywny/zorientowany obiektowo język programowania
 Name:		squirrel
-Version:	2.2.4
+Version:	2.2.5
 Release:	1
-License:	zlib
+License:	Zlib
 Group:		Development/Tools
 Source0:	http://downloads.sourceforge.net/squirrel/%{name}_%{version}_stable.tar.gz
-# Source0-md5:	e411dfd1bcc5220aa80de53e4a5f094d
+# Source0-md5:	35f97d933d46e2b5d54e0c0f2eccfa4a
 Patch0:		%{name}-autotools.patch
+Patch1:		%{name}-mem.patch
 URL:		http://squirrel-lang.org/
-BuildRequires:	libtool
+BuildRequires:	autoconf >= 2.59
+BuildRequires:	automake
+BuildRequires:	libstdc++-devel
+BuildRequires:	libtool >= 2:1.5
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %description
@@ -20,33 +25,52 @@ Squirrel is a high level imperative/OO programming language, designed
 to be a powerful scripting tool that fits in the size, memory
 bandwidth, and real-time requirements of applications like games.
 
+%description -l pl.UTF-8
+Squirrel to wysokopoziomowy, imperatywny, zorientowany obiektowo język
+programowania, zaprojektowany jako potężne narzędzie do skryptów,
+nadający się pod względem rozmiaru, wykorzystania pamięci i wymagań
+czasu rzeczywistego do takich zastosowań, jak gry.
+
 %package devel
 Summary:	Development files needed to use Squirrel libraries
+Summary(pl.UTF-8):	Pliki programistyczne potrzebne do korzystania z bibliotek Squirrela
 Group:		Development/Libraries
 Requires:	%{name} = %{version}-%{release}
 
 %description devel
 Development files needed to use Squirrel libraries.
 
+%description devel -l pl.UTF-8
+Pliki programistyczne potrzebne do korzystania z bibliotek Squirrela.
+
 %package static
-Summary:	Static libsquirrel library
+Summary:	Static Squirrel libraries
+Summary(pl.UTF-8):	Statyczne biblioteki Squirrela
 Group:		Development/Libraries
 Requires:	%{name}-devel = %{version}-%{release}
 
 %description static
-Static libsquirrel library.
+Static Squirrel libraries.
+
+%description static -l pl.UTF-8
+Statyczne biblioteki Squirrela.
 
 %prep
 %setup -q -c
+cd SQUIRREL2
 %patch0 -p1
+%patch1 -p1
 
 # fix extension for autotools
-cd SQUIRREL2
-mv sq/sq.c sq/sq.cpp
+%{__mv} sq/sq.c sq/sq.cpp
 
 %build
 cd SQUIRREL2
-sh autogen.sh
+%{__libtoolize}
+%{__aclocal}
+%{__autoconf}
+%{__autoheader}
+%{__automake}
 %configure
 	%{!?with_static_libs:--disable-static}
 %{__make}
@@ -54,8 +78,7 @@ sh autogen.sh
 %install
 rm -rf $RPM_BUILD_ROOT
 
-cd SQUIRREL2
-%{__make} install \
+%{__make} -C SQUIRREL2 install \
 	DESTDIR=$RPM_BUILD_ROOT
 
 %clean
@@ -74,11 +97,12 @@ rm -rf $RPM_BUILD_ROOT
 %files devel
 %defattr(644,root,root,755)
 %doc SQUIRREL2/doc/*.pdf
-%{_libdir}/libsqstdlib.so
-%{_libdir}/libsquirrel.so
+%attr(755,root,root) %{_libdir}/libsqstdlib.so
+%attr(755,root,root) %{_libdir}/libsquirrel.so
 %{_libdir}/libsqstdlib.la
 %{_libdir}/libsquirrel.la
 %{_includedir}/squirrel
+%{_pkgconfigdir}/squirrel.pc
 
 %if %{with static_libs}
 %files static
